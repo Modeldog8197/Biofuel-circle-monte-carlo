@@ -1,52 +1,44 @@
-"""
-Step 1: Data Inspection and Quality Assessment
-"""
-import pandas as pd
-import numpy as np
-import openpyxl
+"""Export and validate the repository's source workbook without changing its cells."""
+
+import argparse
 import json
-import os
+from pathlib import Path
+import pandas as pd
+from forecast import ROOT, validate_data
 
-# Load workbook
-wb_path = r'c:\Users\avdho\Downloads\Biofuelcircle\Platform BU data for analysis.xlsx'
-wb = openpyxl.load_workbook(wb_path, data_only=True)
 
-print("=" * 80)
-print("WORKBOOK STRUCTURE")
-print("=" * 80)
-print(f"Sheets: {wb.sheetnames}")
-for s in wb.sheetnames:
-    ws = wb[s]
-    print(f"  {s}: {ws.max_row} rows x {ws.max_column} cols")
+def extract(path):
+    raw = pd.read_excel(path, sheet_name="Trends data")
+    data = {"months": [str(c).strip() for c in raw.columns[1:]], "data": {}}
+    for _, row in raw.iterrows():
+        if pd.isna(row.iloc[0]):
+            continue
+        name = str(row.iloc[0]).strip()
+        if name in data["data"]:
+            raise ValueError(f"Duplicate metric: {name}")
+        values = []
+        for cell in row.iloc[1:]:
+            if pd.isna(cell) or (
+                isinstance(cell, str) and cell.strip() in ("", "-", "–", "—")
+            ):
+                values.append(None)
+            else:
+                value = float(str(cell).replace(",", "").replace("\u00a0", "").strip())
+                values.append(value)
+        data["data"][name] = values
+    validate_data(data)
+    return data
 
-# Read all sheets
-all_sheets = {}
-for sheet_name in wb.sheetnames:
-    df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='openpyxl')
-    all_sheets[sheet_name] = df
-    print(f"\n--- Sheet: {sheet_name} ---")
-    print(f"Shape: {df.shape}")
-    print(f"Columns: {list(df.columns)}")
-    print(f"Dtypes:\n{df.dtypes}")
-    print(f"\nFirst 5 rows:")
-    print(df.head().to_string())
-    print(f"\nLast 5 rows:")
-    print(df.tail().to_string())
-    print(f"\nMissing values:\n{df.isnull().sum()}")
-    print(f"\nBasic stats:")
-    print(df.describe().to_string())
 
-# Save sheet info for downstream scripts
-sheet_info = {}
-for name, df in all_sheets.items():
-    sheet_info[name] = {
-        'shape': list(df.shape),
-        'columns': list(df.columns),
-        'dtypes': {str(k): str(v) for k, v in df.dtypes.items()},
-        'missing': {str(k): int(v) for k, v in df.isnull().sum().items()},
-    }
-
-with open(r'c:\Users\avdho\Downloads\Biofuelcircle\sheet_info.json', 'w') as f:
-    json.dump(sheet_info, f, indent=2, default=str)
-
-print("\n\nSheet info saved to sheet_info.json")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--workbook", type=Path, default=ROOT / "Platform BU data for analysis.xlsx"
+    )
+    parser.add_argument("--output", type=Path, default=ROOT / "verified_data.json")
+    args = parser.parse_args()
+    data = extract(args.workbook)
+    args.output.write_text(json.dumps(data, indent=2, allow_nan=False) + "\n")
+    print(
+        f'Exported {len(data["months"])} months and {len(data["data"])} metrics to {args.output}'
+    )
