@@ -1,4 +1,6 @@
 export function quantile(values, p) {
+  if (!values.length || !Number.isFinite(p) || p < 0 || p > 1)
+    throw new Error("Quantiles need values and a probability from 0 to 1.");
   const sorted = [...values].sort((a, b) => a - b);
   const index = (sorted.length - 1) * p;
   const lo = Math.floor(index),
@@ -45,6 +47,14 @@ export function simulate(target, n = 20000, seed = 8197) {
       return target.unit === "count" ? Math.floor(value + 0.5) : value;
     });
   });
+  return summarizePaths(paths);
+}
+export function summarizePaths(paths) {
+  if (
+    !paths.length ||
+    paths.some((p) => p.length !== 4 || p.some((v) => !Number.isFinite(v)))
+  )
+    throw new Error("Expected nonempty four-month paths.");
   const summary = (values) => ({
     p025: quantile(values, 0.025),
     p10: quantile(values, 0.1),
@@ -59,6 +69,7 @@ export function simulate(target, n = 20000, seed = 8197) {
     total: summary(paths.map((p) => p.reduce((a, b) => a + b, 0))),
   };
 }
+
 export function thresholdStats(paths, horizon, threshold) {
   if (!paths.length || !Number.isInteger(horizon) || horizon < 0 || horizon > 3)
     throw new Error("Choose one of the four forecast months.");

@@ -45,6 +45,38 @@ class ForecastTests(unittest.TestCase):
                 other["targets"][name]["development"],
             )
 
+    def test_alternative_models_keep_four_months_and_matching_evidence(self):
+        for target in self.report["targets"].values():
+            self.assertEqual(set(target["alternatives"]), set(MODELS))
+            selected = target["alternatives"][target["model"]]
+            self.assertEqual(selected["point"], target["point"])
+            self.assertEqual(selected["holdout"], target["holdout"])
+            for candidate in target["alternatives"].values():
+                self.assertEqual(len(candidate["point"]), 4)
+                self.assertTrue(all(len(e) == 4 for e in candidate["errors"]))
+                self.assertEqual(len(candidate["holdout_predictions"]), 20)
+
+    def test_scenario_coefficients_do_not_see_later_driver_or_target_values(self):
+        changed = copy.deepcopy(self.data)
+        for name in TARGETS:
+            changed["data"][name][-8:] = [1000000] * 8
+        for name in (
+            "Platform delivered Vol",
+            "Seller Delivered Volume",
+            "Open Interest",
+        ):
+            changed["data"][name][-8:] = [1000000] * 8
+        other = build_report(changed, 1000)
+        for name in TARGETS:
+            a = self.report["targets"][name]["scenario_response"]
+            b = other["targets"][name]["scenario_response"]
+            self.assertEqual(
+                [d["coefficient"] for d in a["drivers"]],
+                [d["coefficient"] for d in b["drivers"]],
+            )
+            self.assertEqual(a["fit_end"], self.report["development_end"])
+            self.assertGreaterEqual(a["pairs"], 20)
+
     def test_early_predictions_do_not_see_later_outcomes(self):
         y = np.array(self.data["data"][TARGETS[0]], float)
         original = evaluate(y, "Damped trend", 35)

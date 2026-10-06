@@ -1,255 +1,588 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Biofuelcircle · Four-month planning lab</title>
+    <title>Biofuelcircle · Monthly analytics</title>
     <meta
       name="description"
-      content="Four-month operational forecasts with chronological evaluation, Monte Carlo uncertainty and downloadable planning outputs. A project by Avdhoot Gupta."
+      content="Interactive monthly analytics, four-month Monte Carlo forecasts, distributions, lag relationships and transparent scenarios."
     />
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="app.js"></script>
+    <link rel="icon" href="favicon.svg" />
+    <link rel="stylesheet" href="styles.css?v=2.1" />
+    <script type="module" src="app.js?v=2.1"></script>
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
-    <header>
-      <a class="brand" href="#main"
-        ><span class="monogram">bc</span
-        ><span
-          >Biofuelcircle<span class="brand-sub"
-            >Operational research</span
-          ></span
-        ></a
+    <a class="skip" href="#workspace">Skip to workspace</a>
+    <header class="app-header">
+      <a class="brand" href="#forecast"
+        ><span class="brand-mark">bc</span
+        ><strong>Biofuelcircle<span>Monthly analytics</span></strong></a
       >
-      <nav aria-label="Main navigation">
-        <a href="#forecast">Forecast</a><a href="#evaluation">Evidence</a
-        ><a href="#methods">Method</a
-        ><a
-          href="https://github.com/Modeldog8197/Biofuel-circle-monte-carlo"
-          target="_blank"
-          rel="noopener"
+      <div class="header-meta">
+        <span id="asof">Loading snapshot</span
+        ><a href="https://github.com/Modeldog8197/Biofuel-circle-monte-carlo"
           >Source ↗</a
+        ><span>Avdhoot Gupta</span>
+      </div>
+    </header>
+    <div class="workspace-shell" id="workspace">
+      <nav class="workspace-nav" role="tablist" aria-label="Analytics tools">
+        <a role="tab" href="#overview" aria-controls="overview">01 Overview</a
+        ><a role="tab" href="#trends" aria-controls="trends">02 Time series</a
+        ><a role="tab" href="#forecast" aria-controls="forecast"
+          >03 Forecast lab</a
+        ><a role="tab" href="#relationships" aria-controls="relationships"
+          >04 Relationships</a
+        ><a role="tab" href="#lagged" aria-controls="lagged">05 Lag explorer</a
+        ><a role="tab" href="#scenarios" aria-controls="scenarios"
+          >06 Scenarios</a
+        ><a role="tab" href="#summary" aria-controls="summary">07 Summary</a
+        ><a role="tab" href="#evaluation" aria-controls="evaluation"
+          >08 Evidence & data</a
         >
       </nav>
-    </header>
-    <main id="main">
-      <section class="intro">
-        <p class="eyebrow">01 / Monthly planning</p>
-        <h1>Four months ahead.<br /><em>A clearer view of uncertainty.</em></h1>
-        <p class="lead">
-          Explore sell trades and manual responses, compare forecasts with a
-          simple baseline, and take the numbers into your planning process.
-        </p>
-        <div class="data-line" id="data-line">
-          Loading the published data snapshot…
-        </div>
-      </section>
-      <div id="error" class="error" role="alert" hidden></div>
-      <section id="forecast" class="workspace" aria-labelledby="forecast-title">
-        <div class="section-top">
-          <div>
-            <p class="eyebrow">Forecast workspace</p>
-            <h2 id="forecast-title">History, followed by possibilities.</h2>
+      <form id="controls" class="global-controls">
+        <label
+          >Forecast metric<select id="metric">
+            <option>New Sell Trades (No)</option>
+            <option>New Sell Trades (V)</option>
+            <option>Manual Responses (No)</option>
+            <option>Manual Responses (V)</option>
+          </select></label
+        ><label
+          >Forecast model<select id="model-select">
+            <option value="selected">Validated selection</option>
+          </select></label
+        ><label
+          >Paths<select id="paths">
+            <option value="1000">1,000</option>
+            <option value="10000">10,000</option>
+            <option value="20000" selected>20,000</option>
+            <option value="50000">50,000</option>
+          </select></label
+        ><label
+          >Seed<input
+            id="seed"
+            type="number"
+            min="0"
+            max="4294967295"
+            value="8197"
+            step="1"
+            required /></label
+        ><button type="submit" id="run" class="primary">
+          Simulate four months</button
+        ><span id="status" role="status">Loading data…</span>
+      </form>
+      <p id="error" class="error" role="alert" hidden></p>
+      <main>
+        <section id="forecast" role="tabpanel" class="tool-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Four-month planning window</p>
+              <h1>Explore the range. Inspect the paths.</h1>
+              <p id="forecast-context" class="muted"></p>
+            </div>
+            <span class="tag">Horizon · 4 months</span>
           </div>
-          <span id="asof" class="tag"></span>
-        </div>
-        <p class="chart-note">
-          May–August 2026, from the supplied April 2026 snapshot. Current-date
-          forecasting requires updated observations.
-        </p>
-        <form id="controls" class="controls">
-          <label
-            >Metric<select id="metric">
-              <option>New Sell Trades (No)</option>
-              <option>New Sell Trades (V)</option>
-              <option>Manual Responses (No)</option>
-              <option>Manual Responses (V)</option>
-            </select></label
-          >
-          <label
-            >Simulated paths<select id="paths">
-              <option value="1000">1,000</option>
-              <option value="10000">10,000</option>
-              <option value="20000" selected>20,000</option>
-              <option value="50000">50,000</option>
-            </select></label
-          >
-          <label
-            >Random seed<input
-              id="seed"
-              type="number"
-              min="0"
-              max="4294967295"
-              value="8197"
-              step="1"
-              required
-          /></label>
-          <button type="submit" id="run">Run simulation</button>
-        </form>
-        <div class="stats" id="stats"></div>
-        <div class="plot-header">
-          <span id="plot-caption"></span>
-          <div class="legend">
-            <span class="historical">Observed</span
-            ><span class="median">Median</span
-            ><span class="band">80% / 95% bands</span>
+          <p class="snapshot-note">
+            The supplied data ends in April 2026. Forecasts cover May–August
+            2026 relative to that snapshot; updated observations are required
+            for current forecasts.
+          </p>
+          <div id="stats" class="stats"></div>
+          <div class="chart-panel">
+            <div class="panel-heading">
+              <div>
+                <h2 id="plot-caption">Forecast trajectories</h2>
+                <p id="model-explanation" class="muted"></p>
+              </div>
+              <div class="chart-options">
+                <label
+                  >History<select id="history-window">
+                    <option value="12">Last 12 months</option>
+                    <option value="24">Last 24 months</option>
+                    <option value="43">All history</option>
+                    <option value="1">Forecast only</option>
+                  </select></label
+                ><label
+                  >Band<select id="band-level">
+                    <option value="80">80%</option>
+                    <option value="95">95%</option>
+                  </select></label
+                ><label class="check"
+                  ><input id="show-paths" type="checkbox" checked />Central
+                  paths</label
+                >
+              </div>
+            </div>
+            <div class="view-tabs" role="tablist" aria-label="Forecast views">
+              <button
+                type="button"
+                role="tab"
+                data-view="fan"
+                aria-selected="true"
+              >
+                History & paths</button
+              ><button
+                type="button"
+                role="tab"
+                data-view="distribution"
+                aria-selected="false"
+              >
+                Outcome distribution</button
+              ><button
+                type="button"
+                role="tab"
+                data-view="probability"
+                aria-selected="false"
+              >
+                Target probability
+              </button>
+            </div>
+            <div class="forecast-view" data-view="fan">
+              <div id="forecast-chart"></div>
+              <p id="path-note" class="chart-note"></p>
+            </div>
+            <div class="forecast-view" data-view="distribution" hidden>
+              <div class="inline-controls">
+                <label>Outcome<select id="distribution-month"></select></label
+                ><label
+                  >Histogram bins<select id="bins">
+                    <option>20</option>
+                    <option selected>30</option>
+                    <option>40</option>
+                  </select></label
+                ><span id="distribution-stats" class="muted"></span>
+              </div>
+              <div id="distribution-chart"></div>
+              <p class="chart-note">
+                Every simulated path contributes. Percentiles are distribution
+                summaries, not best/worst cases or a most-likely outcome.
+              </p>
+            </div>
+            <div class="forecast-view" data-view="probability" hidden>
+              <div id="probability-chart"></div>
+              <p class="chart-note">
+                An empirical exceedance curve using all paths. Tap a point to
+                set the threshold below. The active outcome is chosen in the
+                distribution view.
+              </p>
+            </div>
           </div>
-        </div>
-        <div id="forecast-chart" class="chart"></div>
-        <p class="chart-note">
-          Bands are simulated percentiles, not best or worst cases. A median is
-          the middle of the distribution, not its most likely outcome.
-        </p>
-        <div class="table-wrap">
-          <table>
-            <caption>
-              Next four months
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Month</th>
-                <th scope="col">Median</th>
-                <th scope="col">80% interval</th>
-                <th scope="col">95% interval</th>
-                <th scope="col">Above latest value</th>
-              </tr>
-            </thead>
-            <tbody id="forecast-rows"></tbody>
-          </table>
-        </div>
-        <div class="planning">
-          <div>
-            <p class="eyebrow">Threshold explorer</p>
-            <h3>How often could a threshold be exceeded?</h3>
-            <p>
-              Choose a monthly level to see its model-based exceedance
-              probability and average excess across all paths.
-            </p>
+          <div class="forecast-bottom">
+            <div class="panel">
+              <h2>Monthly forecast</h2>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Median</th>
+                      <th>80% interval</th>
+                      <th>95% interval</th>
+                      <th>Above latest</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecast-rows"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="panel threshold-panel">
+              <h2>Threshold explorer</h2>
+              <div class="inline-controls">
+                <label>Month<select id="threshold-month"></select></label
+                ><label
+                  >Threshold<input
+                    id="threshold"
+                    type="number"
+                    min="0"
+                    step="any"
+                /></label>
+              </div>
+              <output id="threshold-result" aria-live="polite"></output>
+              <p class="chart-note">
+                These are model-based probabilities. Historical interval
+                coverage is shown in Evidence & data.
+              </p>
+            </div>
           </div>
-          <div class="threshold-controls">
-            <label>Month<select id="threshold-month"></select></label
+          <div class="export-row">
+            <button id="export-csv" class="secondary" disabled>
+              All metrics CSV</button
+            ><button id="export-json" class="secondary" disabled>
+              Reproducible JSON</button
+            ><button id="export-paths" class="secondary" disabled>
+              Actual paths CSV</button
+            ><button id="export-svg" class="secondary" disabled>
+              Chart SVG
+            </button>
+          </div>
+        </section>
+        <section id="overview" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Snapshot overview</p>
+              <h1>Four targets, one source.</h1>
+              <p id="data-line" class="muted"></p>
+            </div>
+          </div>
+          <div id="overview-stats" class="overview-grid"></div>
+          <div class="chart-panel">
+            <div class="panel-heading">
+              <h2>Growth index across all four targets</h2>
+              <span class="muted">100 = first observed value</span>
+            </div>
+            <div id="overview-chart"></div>
+          </div>
+          <div class="panel">
+            <h2>Latest operating snapshot</h2>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Latest</th>
+                    <th>Previous</th>
+                    <th>Monthly change</th>
+                    <th>Observed months</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+        <section id="trends" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Historical exploration</p>
+              <h1>Compare trajectories, not just endpoints.</h1>
+              <p class="muted">
+                Choose indexed growth, raw values or monthly percentage changes.
+                Missing observations remain gaps.
+              </p>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="inline-controls">
+              <label
+                >View<select id="trend-view">
+                  <option value="indexed">Growth index · 100 at start</option>
+                  <option value="raw">Raw values · one metric</option>
+                  <option value="growth">Monthly change · %</option>
+                </select></label
+              ><label>Raw metric<select id="trend-metric"></select></label
+              ><label
+                >Window<select id="trend-window">
+                  <option value="43">All history</option>
+                  <option value="24">Last 24 months</option>
+                  <option value="12">Last 12 months</option>
+                </select></label
+              ><label class="check"
+                ><input type="checkbox" id="smooth-trend" />3-month
+                average</label
+              >
+            </div>
+            <div id="trend-chart"></div>
+            <p id="trend-note" class="chart-note"></p>
+          </div>
+          <div class="panel">
+            <h2>Read the monthly values</h2>
+            <div class="table-scroll">
+              <table>
+                <thead id="trend-head"></thead>
+                <tbody id="trend-rows"></tbody>
+              </table>
+            </div>
+            <button id="export-history" class="secondary">
+              Historical data CSV
+            </button>
+          </div>
+        </section>
+        <section id="relationships" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Restored driver analysis</p>
+              <h1>See which changes move together.</h1>
+              <p class="muted">
+                Computed from the source data. Associations do not establish
+                causation or validated forecasting importance; totals may share
+                observations mechanically.
+              </p>
+            </div>
+          </div>
+          <div class="inline-controls">
+            <label>Outcome<select id="relation-target"></select></label
+            ><label>Driver<select id="driver"></select></label
             ><label
-              >Monthly threshold<input
-                id="threshold"
-                type="number"
-                min="0"
-                step="any" /></label
-            ><output id="threshold-result" aria-live="polite"></output>
+              >Basis<select id="relation-basis">
+                <option value="changes">Monthly differences</option>
+                <option value="levels">Observed levels</option>
+              </select></label
+            ><label
+              >Matrix<select id="matrix-size">
+                <option value="12">12 key metrics</option>
+                <option value="32">All 32 metrics</option>
+              </select></label
+            >
           </div>
-        </div>
-        <div class="export-row">
-          <button id="export-csv" class="secondary">
-            Download all four metrics · CSV</button
-          ><button id="export-json" class="secondary">
-            Download reproducible report · JSON</button
-          ><span id="status" role="status" aria-live="polite"></span>
-        </div>
-      </section>
-      <section id="evaluation">
-        <div class="section-top">
-          <div>
-            <p class="eyebrow">02 / Model evidence</p>
-            <h2>Results on later, unseen months.</h2>
+          <div class="split-grid">
+            <div class="panel">
+              <h2>Strongest contemporaneous associations</h2>
+              <div id="driver-chart"></div>
+              <p class="chart-note">
+                Ranked by absolute Pearson r, with at least 12 paired
+                observations. Tap a bar to inspect that driver.
+              </p>
+            </div>
+            <div class="panel">
+              <h2 id="scatter-title">Paired monthly observations</h2>
+              <div id="driver-scatter"></div>
+              <p id="scatter-stats" class="chart-note"></p>
+            </div>
           </div>
-        </div>
-        <p class="section-copy" id="evaluation-copy"></p>
-        <div id="evaluation-note" class="callout"></div>
-        <div class="evidence-grid">
-          <div class="paper">
-            <h3>Chronological model comparison</h3>
-            <p class="muted">
-              Development MAE selects the model. The later evaluation period
-              does not select it.
+          <div class="panel">
+            <h2>Full correlation matrix</h2>
+            <p class="chart-note">
+              Blue = positive, ochre = negative. Select a cell to update the
+              paired-observation chart.
             </p>
-            <div class="table-wrap">
+            <div id="correlation-matrix"></div>
+          </div>
+        </section>
+        <section id="lagged" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Leading-indicator exploration</p>
+              <h1>Shift the driver. Keep the dates visible.</h1>
+              <p class="muted">
+                Lag 1 pairs an earlier driver change with the following month's
+                target change. These relationships have not been validated as
+                causal or predictive signals.
+              </p>
+            </div>
+          </div>
+          <div class="inline-controls">
+            <label>Driver<select id="lag-driver"></select></label
+            ><label
+              >Lag<select id="lag">
+                <option value="0">Same month</option>
+                <option value="1" selected>1 month earlier</option>
+                <option value="2">2 months earlier</option>
+                <option value="3">3 months earlier</option>
+                <option value="4">4 months earlier</option>
+                <option value="5">5 months earlier</option>
+                <option value="6">6 months earlier</option>
+              </select></label
+            ><label
+              >Basis<select id="lag-basis">
+                <option value="changes">Monthly differences</option>
+                <option value="levels">Observed levels</option>
+              </select></label
+            >
+          </div>
+          <div class="split-grid">
+            <div class="panel">
+              <h2>Relationship across lags 0–6</h2>
+              <div id="lag-chart"></div>
+            </div>
+            <div class="panel">
+              <h2>Earlier driver vs later outcome</h2>
+              <div id="lag-scatter"></div>
+              <p id="lag-stats" class="chart-note"></p>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Lag relationship heatmap</h2>
+            <div id="lag-matrix"></div>
+          </div>
+          <div class="panel">
+            <h2>Strongest associations at the selected lag</h2>
+            <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Candidate</th>
-                    <th>Development MAE</th>
-                    <th>Selection</th>
+                    <th>Driver</th>
+                    <th>r</th>
+                    <th>Pairs</th>
                   </tr>
                 </thead>
-                <tbody id="model-rows"></tbody>
+                <tbody id="lag-rows"></tbody>
               </table>
             </div>
           </div>
-          <div class="paper">
-            <h3>Error by forecast distance</h3>
-            <p class="muted">
-              Lower MAE is better. Each horizon has five evaluation forecasts in
-              this snapshot.
+        </section>
+        <section id="scenarios" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">What-if scenario workbench</p>
+              <h1>State the assumptions. Compare the outcomes.</h1>
+              <p class="muted">
+                Driver offsets use a descriptive ridge fit of monthly changes
+                through the development period. They are conditional
+                illustrations, not proven effects of interventions.
+              </p>
+            </div>
+          </div>
+          <div class="scenario-layout">
+            <div class="panel">
+              <h2>Adjust the inputs</h2>
+              <div id="driver-sliders"></div>
+              <label
+                >Assumed target growth per month
+                <output id="growth-label">0%</output
+                ><input
+                  id="scenario-growth"
+                  type="range"
+                  min="-30"
+                  max="30"
+                  value="0"
+                  step="1" /></label
+              ><label
+                >Driver effect pattern<select id="scenario-pattern">
+                  <option value="persistent">Same offset each month</option>
+                  <option value="first">Month-one offset only</option>
+                </select></label
+              >
+              <div class="preset-buttons">
+                <button type="button" data-preset="platform10">
+                  Platform +10%</button
+                ><button type="button" data-preset="platform20">
+                  Platform +20%</button
+                ><button type="button" data-preset="seller10">
+                  Seller +10%</button
+                ><button type="button" data-preset="interest20">
+                  Open interest +20%</button
+                ><button type="button" data-preset="reset">Reset</button>
+              </div>
+              <p class="chart-note">
+                Direct monthly growth is a user assumption. Driver coefficients
+                hold other driver changes fixed; extrapolation and confounding
+                remain unresolved.
+              </p>
+              <p id="scenario-status" role="status" class="muted"></p>
+              <button id="save-scenario" class="primary" disabled>
+                Save comparison</button
+              ><button id="clear-scenarios" class="secondary">
+                Clear comparisons
+              </button>
+            </div>
+            <div>
+              <div class="chart-panel">
+                <h2>Baseline vs assumed scenario</h2>
+                <div id="scenario-chart"></div>
+                <p id="scenario-fit" class="chart-note"></p>
+              </div>
+              <div class="panel">
+                <h2>Month-four outcomes for every target</h2>
+                <div class="table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Target</th>
+                        <th>Baseline median</th>
+                        <th>Scenario median</th>
+                        <th>Change</th>
+                        <th>Scenario 80% band</th>
+                      </tr>
+                    </thead>
+                    <tbody id="scenario-rows"></tbody>
+                  </table>
+                </div>
+                <button id="export-scenario" class="secondary" disabled>
+                  Scenario CSV
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>Saved comparisons</h2>
+            <p id="saved-scenarios" class="muted">
+              No comparisons saved. Up to three can be kept in this session.
             </p>
-            <div class="table-wrap">
+            <div id="snapshot-chart"></div>
+          </div>
+        </section>
+        <section id="summary" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Executive summary</p>
+              <h1>The findings, with their limits.</h1>
+              <p class="muted">
+                Generated from the active model, simulation and observed data.
+              </p>
+            </div>
+            <button id="export-summary" class="secondary">
+              Summary Markdown
+            </button>
+          </div>
+          <div id="summary-content"></div>
+        </section>
+        <section id="evaluation" role="tabpanel" class="tool-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Model evidence & provenance</p>
+              <h1>Check the performance behind the picture.</h1>
+              <p id="evaluation-copy" class="muted"></p>
+            </div>
+          </div>
+          <div id="evaluation-note" class="callout"></div>
+          <div class="split-grid">
+            <div class="panel">
+              <h2>Candidate model comparison</h2>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Candidate</th>
+                      <th>Development MAE</th>
+                      <th>Later MAE</th>
+                      <th>Choice</th>
+                    </tr>
+                  </thead>
+                  <tbody id="model-rows"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Errors by forecast horizon</h2>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Ahead</th>
+                      <th>Model MAE</th>
+                      <th>Naive MAE</th>
+                      <th>80% coverage</th>
+                    </tr>
+                  </thead>
+                  <tbody id="horizon-rows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <details class="panel">
+            <summary>Inspect every evaluation forecast</summary>
+            <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Ahead</th>
-                    <th>Selected model MAE</th>
-                    <th>Last-observation MAE</th>
-                    <th>80% coverage</th>
+                    <th>Origin</th>
+                    <th>Target month</th>
+                    <th>Actual</th>
+                    <th>Forecast</th>
+                    <th>Baseline</th>
                   </tr>
                 </thead>
-                <tbody id="horizon-rows"></tbody>
+                <tbody id="audit-rows"></tbody>
               </table>
             </div>
-          </div>
-        </div>
-        <details class="paper">
-          <summary>Inspect every evaluation forecast</summary>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Forecast origin</th>
-                  <th>Target month</th>
-                  <th>Actual</th>
-                  <th>Forecast</th>
-                  <th>Baseline</th>
-                </tr>
-              </thead>
-              <tbody id="audit-rows"></tbody>
-            </table>
-          </div>
-        </details>
-      </section>
-      <section class="evidence-grid">
-        <div class="paper">
-          <p class="eyebrow">03 / Exploratory relationships</p>
-          <h2>Changes that move together.</h2>
-          <p class="muted">
-            Correlations use month-to-month changes. Lag 1 compares an earlier
-            driver change with a later target change. These are associations,
-            not proven causes or validated predictors.
-          </p>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Operational metric</th>
-                  <th>Lag</th>
-                  <th>Pearson r</th>
-                  <th>Pairs</th>
-                </tr>
-              </thead>
-              <tbody id="association-rows"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="paper">
-          <p class="eyebrow">04 / Data provenance</p>
-          <h2>What the snapshot contains.</h2>
-          <p class="muted">
-            The supplied workbook ends in April 2026. May–August 2026 are
-            forecasts relative to that snapshot; they are not fresh forecasts
-            for today.
-          </p>
-          <dl id="provenance"></dl>
-          <details>
-            <summary>Missing values and signed observations</summary>
-            <div class="table-wrap">
+          </details>
+          <div class="panel">
+            <h2>Source & data quality</h2>
+            <dl id="provenance"></dl>
+            <div class="table-scroll">
               <table>
                 <thead>
                   <tr>
@@ -261,52 +594,44 @@
                 <tbody id="quality-rows"></tbody>
               </table>
             </div>
-          </details>
-        </div>
-      </section>
-      <section id="methods" class="methods">
-        <p class="eyebrow">05 / Research notes</p>
-        <h2>A forecast should be inspectable.</h2>
-        <div class="method-grid">
-          <article>
-            <span class="step">01</span>
-            <h3>Keep time in order</h3>
+          </div>
+          <div class="panel method-notes">
+            <h2>Method notes</h2>
             <p>
-              Models train only on months before each forecast origin. Six
-              candidates compete on the development period; the final eight
-              months provide a separate, rolling evaluation.
+              Six candidates are compared on chronological development errors.
+              Later evaluation uses five expanding four-month origins: the 20
+              target–horizon outcomes overlap and are not independent samples.
+              Manual model comparisons are exploratory.
             </p>
-          </article>
-          <article>
-            <span class="step">02</span>
-            <h3>Preserve joint errors</h3>
             <p>
-              Each path resamples a complete four-month error vector. Errors
-              scale with the latest level and retain dependence across horizons.
-              Counts are rounded and all outcomes remain nonnegative.
+              Each simulation samples a complete historical four-month error
+              vector. The paths preserve cross-horizon dependence within a
+              target, remain nonnegative and round counts. More paths reduce
+              numerical sampling noise, not model error. Bands under-cover
+              several evaluation outcomes; probabilities are not calibrated
+              guarantees.
             </p>
-          </article>
-          <article>
-            <span class="step">03</span>
-            <h3>Measure the limitations</h3>
             <p>
-              Overlapping forecasts are not independent observations. The sample
-              is small and several interval coverages miss their nominal level.
-              More paths reduce simulation noise; they do not repair a weak
-              model.
+              Four-month totals sum each path before taking percentiles. No
+              cross-target aggregate is computed. Central paths are a clearly
+              labelled subset for visibility; distributions, thresholds, tables
+              and exports use all paths.
             </p>
-          </article>
-        </div>
-        <p class="method-foot">
-          Totals sum each complete simulated path before taking percentiles.
-          They never add monthly interval endpoints. Cross-metric totals are not
-          computed because dependence between targets is not modelled.
-        </p>
-      </section>
-    </main>
-    <footer>
-      <span>A project by Avdhoot Gupta</span
-      ><span>Four-month forecast engine · v2.0</span>
-    </footer>
+            <p>
+              Relationships and lag heatmaps use observed pairs, exclude gaps,
+              and expose levels versus differences. Scenario coefficients are
+              fitted only through the development cutoff, with standardized
+              predictor changes and ridge penalty 10. Future driver changes and
+              their persistence are user assumptions; scenario accuracy has not
+              been established.
+            </p>
+          </div>
+        </section>
+      </main>
+      <footer>
+        <span>Biofuelcircle research desk · Avdhoot Gupta</span
+        ><span>Four-month engine · v2.1</span>
+      </footer>
+    </div>
   </body>
 </html>

@@ -246,7 +246,7 @@ def build_report(data, n=20000, seed=8197):
         data, sort_keys=True, separators=(",", ":"), allow_nan=False
     )
     report = {
-        "version": "2.0.0",
+        "version": "2.1.0",
         "horizon": HORIZON,
         "paths": n,
         "seed": seed,
@@ -267,6 +267,11 @@ def build_report(data, n=20000, seed=8197):
         ],
         "targets": {},
     }
+    scenario_drivers = (
+        "Platform delivered Vol",
+        "Seller Delivered Volume",
+        "Open Interest",
+    )
     for target in TARGETS:
         y = np.array(data["data"][target])
         tuning = []
@@ -278,6 +283,54 @@ def build_report(data, n=20000, seed=8197):
             tuning.append(
                 {"model": model, "mae": float(np.mean(errors)), "origins": len(errors)}
             )
+        alternatives = {}
+        for candidate in MODELS:
+            candidate_records = evaluate(y, candidate, development_end)
+            alternatives[candidate] = {
+                "point": predict(y, candidate).tolist(),
+                "errors": error_vectors(y, candidate).tolist(),
+                "holdout": scores(candidate_records),
+                "by_horizon": [
+                    scores([r for r in candidate_records if r["horizon"] == h])
+                    for h in range(1, 5)
+                ],
+                "holdout_predictions": candidate_records,
+            }
+        # A descriptive, regularized mapping of historical monthly changes.
+        # Hypothetical driver changes are supplied by the user, never forecast or called causal.
+        x = np.array(
+            [
+                [np.nan if v is None else v for v in data["data"][d][:development_end]]
+                for d in scenario_drivers
+            ]
+        ).T
+        dx, dy = np.diff(x, axis=0), np.diff(y[:development_end])
+        valid = np.isfinite(dx).all(axis=1)
+        xd, yd = dx[valid], dy[valid]
+        scale = np.std(xd, axis=0)
+        scale = np.where(scale > 0, scale, 1)
+        standardized = (xd - xd.mean(axis=0)) / scale
+        beta = (
+            np.linalg.solve(
+                standardized.T @ standardized + 10 * np.eye(3),
+                standardized.T @ (yd - yd.mean()),
+            )
+            / scale
+        )
+        scenario_response = {
+            "kind": "descriptive ridge association",
+            "penalty": 10,
+            "fit_end": dates[development_end - 1].strftime("%Y-%m"),
+            "pairs": int(valid.sum()),
+            "drivers": [
+                {
+                    "metric": d,
+                    "last": float(data["data"][d][-1]),
+                    "coefficient": float(b),
+                }
+                for d, b in zip(scenario_drivers, beta)
+            ],
+        }
         model = min(tuning, key=lambda row: row["mae"])["model"]
         records = evaluate(y, model, development_end)
         point = predict(y, model)
@@ -299,6 +352,8 @@ def build_report(data, n=20000, seed=8197):
             ],
             "holdout_predictions": records,
             "associations": associations(data, target),
+            "alternatives": alternatives,
+            "scenario_response": scenario_response,
         }
     return report
 

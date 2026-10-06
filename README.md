@@ -4,6 +4,34 @@ Operational forecasting by **Avdhoot Gupta**, using the monthly platform workboo
 
 ![Four-month planning dashboard](docs/dashboard.png)
 
+## Interactive workspace · v2.1
+
+The original analytical tools are restored in a compact tabbed workspace:
+
+| Tool | Available interactions |
+|---|---|
+| Overview | Four sparklines, every source metric, monthly comparisons |
+| Time series | Indexed, raw and monthly-change views; optional 3-month average; data CSV |
+| Forecast lab | Recent-history window, six model comparisons, confidence bands, central trajectories |
+| Outcome distribution | Choose any forecast month or the four-month total; inspect histogram bins |
+| Target probability | Exact empirical exceedance curve; select a point to set the threshold |
+| Relationships | Ranked associations, selectable scatter observations, 12- or 32-metric correlation matrix |
+| Lag explorer | Lags 0–6, aligned observation dates, clickable heatmap and leading-association ranking |
+| Scenarios | Driver inputs, explicit target-growth assumptions, persistence controls, three saved comparisons |
+| Summary and evidence | Active model results, complete evaluation audit, provenance and limitations |
+
+Line charts support hover/tap inspection, keyboard stepping, legend toggles, horizontal drag zoom and reset. The forecast opens with twelve historical months plus four future months instead of compressing the projection beside the entire history. A constant recent-mean forecast remains constant: sample trajectories show simulated variation without adding an artificial trend.
+
+**Central paths** are distinct trajectories whose four monthly values lie inside their respective 80% bands. This is a labelled visual subset. All paths, including tails, contribute to distributions, probabilities, totals and exported data. Forecast SVGs and full paths can be downloaded.
+
+![Outcome distribution](docs/distribution.png)
+
+### What-if assumptions
+
+Driver scenarios use a descriptive ridge regression of monthly changes in platform-delivered volume, seller-delivered volume and open interest against each target's monthly changes. The fit uses only the development period, standardized predictor changes and ridge penalty 10. A supplied driver percentage is converted to an illustrative target offset using the latest observed driver level and fitted coefficient. The offset can persist across the four months or apply only in month one.
+
+An independent, explicitly assumed target growth rate compounds month by month. Outcomes are clipped at zero and counts rounded. Scenario results are **conditional illustrations**, not validated causal intervention effects or new calibrated forecasts. The active temporal model's accuracy does not validate this driver-response mapping. Zero changes reproduce the baseline exactly. Saved comparisons retain the executed model, seed and assumptions and last only for the current session.
+
 ## What the project does
 
 - Produces exactly **four months** of forecasts, with median, mean, 80% and 95% simulated intervals.
@@ -64,7 +92,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-Tests cover workbook equivalence, missing values, calendar gaps, four-month boundaries, constant/zero series, nonnegative integer counts, path totals, seeded Python/browser parity, model-selection isolation from later outcomes, causal intervals, responsive interaction and export reproducibility. GitHub Actions runs the complete suite.
+Tests cover workbook equivalence, missing values, calendar gaps, four-month boundaries, constant/zero series, nonnegative integer counts, path totals, seeded Python/browser parity, model-selection isolation from later outcomes, causal intervals, responsive interaction, zoom and legend toggles, heatmap selection, scenario identity and persistence, lag alignment, histogram conservation and export reproducibility. GitHub Actions runs the complete suite.
 
 ## Method
 
@@ -82,7 +110,9 @@ The design follows [chronological forecast evaluation](https://otexts.com/fpp3/t
 |---|---|
 | `01_data_inspection.py` | Workbook extraction and validation |
 | `forecast.py` | Selection, evaluation, simulation and report generation |
-| `model.js`, `worker.js` | Reproducible browser simulation |
+| `model.js`, `worker.js` | Reproducible browser simulation and scenario worker |
+| `analysis.js` | Historical transforms, paired relationships, distributions and scenario arithmetic |
+| `charts.js` | Interactive native SVG charts and selectable heatmaps |
 | `app.js`, `index.html`, `styles.css` | Analytical dashboard |
 | `tests/` | Model, accounting, parity and browser checks |
 
