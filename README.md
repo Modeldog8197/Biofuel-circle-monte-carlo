@@ -1,5 +1,7 @@
 # Biofuelcircle · Four-month planning lab
 
+Visit the model - https://modeldog8197.github.io/Biofuel-circle-monte-carlo/
+
 Operational forecasting by **Avdhoot Gupta**, using the monthly platform workbook in this repository. The dashboard focuses on four measurable outputs: sell-trade counts and volumes, and manual-response counts and volumes.
 
 ![Four-month planning dashboard](docs/dashboard.png)
